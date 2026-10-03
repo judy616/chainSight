@@ -10,4 +10,8 @@ router.get("/graph/:accountNumber", fraudController.getGraphData);
 router.post("/simulate-step", fraudController.simulateStep);
 router.post("/reseed", fraudController.reseed);
 
+// Feature 1: Attack-Chain Correlation Endpoints
+router.post("/events", fraudController.ingestEvent);
+router.get("/attack-chain/:userId", fraudController.getAttackChain);
+
 module.exports = router;

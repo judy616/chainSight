@@ -1,8 +1,24 @@
-﻿import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RotateCcw, ChevronRight, Laptop, KeyRound, UserPlus, ArrowUpRight } from "lucide-react";
+import axios from "../api/axios";
 
 export default function StepSimulator({ onStepChange }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [liveStepData, setLiveStepData] = useState(null);
+
+  useEffect(() => {
+    const fetchStepFromBackend = async () => {
+      try {
+        const res = await axios.post("/fraud/simulate-step", { stepNumber: currentStepIndex + 1 });
+        if (res.data && res.data.success && res.data.currentStep) {
+          setLiveStepData(res.data.currentStep);
+        }
+      } catch (err) {
+        console.warn("Backend step simulation unavailable, using local:", err);
+      }
+    };
+    fetchStepFromBackend();
+  }, [currentStepIndex]);
 
   const steps = [
     {
@@ -75,7 +91,25 @@ export default function StepSimulator({ onStepChange }) {
     },
   ];
 
-  const current = steps[currentStepIndex];
+  const fallback = steps[currentStepIndex];
+  const current = liveStepData && liveStepData.step === currentStepIndex + 1
+    ? {
+        ...fallback,
+        ...liveStepData,
+        icon: fallback.icon,
+        explanation: liveStepData.details || fallback.explanation,
+        policyResponse: liveStepData.policyResponse || fallback.policyResponse,
+        progressWidth: `${liveStepData.cumulativeScore}%`,
+        barColor:
+          liveStepData.cumulativeScore >= 85
+            ? "bg-rose-500"
+            : liveStepData.cumulativeScore >= 70
+            ? "bg-amber-400"
+            : liveStepData.cumulativeScore >= 40
+            ? "bg-yellow-400"
+            : "bg-emerald-400",
+      }
+    : fallback;
   const Icon = current.icon;
 
   const nextStep = () => {

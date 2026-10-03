@@ -7,7 +7,17 @@ const eventSchema = new mongoose.Schema(
     eventType: {
       type: String,
       required: true,
-      enum: ["LOGIN", "PASSWORD_CHANGE", "BENEFICIARY_ADDED", "TRANSFER_ATTEMPT", "MFA_PROMPT", "SESSION_REVOKED"],
+      enum: [
+        "LOGIN",
+        "NEW_DEVICE_LOGIN",
+        "TOR_LOGIN",
+        "PASSWORD_CHANGE",
+        "PASSWORD_RESET",
+        "BENEFICIARY_ADDED",
+        "TRANSFER_ATTEMPT",
+        "MFA_PROMPT",
+        "SESSION_REVOKED",
+      ],
     },
     deviceFingerprint: { type: String, default: "Unknown Device" },
     isNewDevice: { type: Boolean, default: false },
@@ -18,6 +28,8 @@ const eventSchema = new mongoose.Schema(
     timestamp: { type: Date, default: Date.now, index: true },
     metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
     riskContribution: { type: Number, default: 0 },
+    velocityDeltaMinutes: { type: Number, default: 0 },
+    ruleTriggered: { type: String, default: "" },
     status: { type: String, default: "LOGGED" },
   },
   { timestamps: true }

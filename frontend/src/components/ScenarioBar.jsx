@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 
 export default function ScenarioBar({ activeScenario, onSelectScenario }) {
   const scenarios = [
@@ -37,26 +37,26 @@ export default function ScenarioBar({ activeScenario, onSelectScenario }) {
   ];
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-[#0e0e12]/80 px-4 py-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-zinc-400">Demo Scenario:</span>
-      </div>
+    <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/[0.08] bg-[#0d0d12]/90 p-1.5 shadow-xl backdrop-blur-xl">
+      <span className="hidden sm:inline-block font-mono text-[10px] uppercase tracking-wider text-zinc-500 pl-3 pr-2">
+        Scenario:
+      </span>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         {scenarios.map((sc) => {
           const isSelected = activeScenario === sc.id;
           return (
             <button
               key={sc.id}
               onClick={() => onSelectScenario(sc.id)}
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-all ${
+              className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
                 isSelected
-                  ? "bg-zinc-800 text-white border border-amber-500/40 shadow-sm"
-                  : "bg-white/[0.02] text-zinc-400 border border-white/[0.04] hover:text-zinc-200 hover:border-white/10"
+                  ? "bg-zinc-800/95 text-white border border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/20"
+                  : "bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]"
               }`}
             >
               <span>{sc.name}</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-mono border ${sc.badgeColor}`}>
+              <span className={`rounded-full px-2 py-0.2 font-mono text-[10px] border ${sc.badgeColor}`}>
                 {sc.score}
               </span>
             </button>

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "../api/axios";
 import Navbar from "../components/Navbar";
 import ScenarioBar from "../components/ScenarioBar";
@@ -236,6 +236,7 @@ export default function Dashboard() {
         onNavigate={handleNavigate}
         onReseed={handleReseed}
         isReseeding={isReseeding}
+        onOpenDossier={() => scrollTo("section-investigate")}
       />
 
       <main className="mx-auto max-w-7xl px-6 py-10 space-y-24">
@@ -251,14 +252,32 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* Hero Typography */}
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.08]">
-              See the attack before the transaction.
+          {/* Hero Typography with Editorial Contrast */}
+          <div className="text-center max-w-4xl mx-auto space-y-5">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-light tracking-tight text-white leading-[1.08]">
+              See the attack <span className="font-editorial italic font-normal text-amber-200">before</span> the transaction.
             </h1>
-            <p className="text-base sm:text-lg text-zinc-400 font-normal leading-relaxed">
-              Connect behavioural signals, attack sequences and destination-account intelligence in real time.
+            <p className="text-base sm:text-lg text-zinc-400 font-normal leading-relaxed max-w-2xl mx-auto">
+              Real-time correlation across behavioral deviations, temporal attack chains, and destination mule topologies.
             </p>
+
+            {/* Kenesis-inspired hero action buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
+              <button
+                onClick={() => scrollTo("section-chains")}
+                className="group flex items-center gap-2 rounded-full bg-gradient-to-r from-[#fbb034] via-[#f59e0b] to-[#d97706] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.3)] hover:shadow-[0_0_32px_rgba(245,158,11,0.5)] hover:brightness-105 active:scale-95 transition-all"
+              >
+                <span>Live Attack Simulation</span>
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </button>
+              <button
+                onClick={() => setShowLiveMonitorModal(true)}
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-2.5 text-xs font-mono font-medium text-zinc-300 hover:bg-white/[0.08] hover:border-white/20 active:scale-95 transition-all"
+              >
+                <Activity className="h-3.5 w-3.5 text-amber-400" />
+                <span>Inject Event</span>
+              </button>
+            </div>
           </div>
 
           {/* Core Metric Highlights (Compact, minimal, not 5 huge cards) */}
