@@ -22,10 +22,24 @@ import {
   FileText,
   ChevronRight,
   X,
+  Bot,
 } from "lucide-react";
 
-export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
+export default function Dashboard({
+  hideNavbar = false,
+  activeScenario: controlledScenario,
+  onSelectScenario: controlledSelectScenario,
+  activeAlert: controlledActiveAlert,
+  alertDetail: controlledAlertDetail,
+  alerts: controlledAlerts,
+  onExecuteAction: controlledExecuteAction,
+  onOpenCopilot,
+  onNavigateTab,
+  activeTab: controlledActiveTab,
+}) {
+  const [internalActiveTab, setInternalActiveTab] = useState("overview");
+  const activeTab = controlledActiveTab || internalActiveTab;
+
   const [kpis, setKpis] = useState({
     totalMonitoredAccounts: 4,
     activeAtoIncidents: 3,
@@ -34,10 +48,16 @@ export default function Dashboard() {
     flaggedMuleAccounts: 3,
   });
 
-  const [alerts, setAlerts] = useState([]);
+  const [internalAlerts, setInternalAlerts] = useState([]);
+  const alerts = controlledAlerts && controlledAlerts.length > 0 ? controlledAlerts : internalAlerts;
+
   const [selectedAlertId, setSelectedAlertId] = useState(null);
-  const [alertDetail, setAlertDetail] = useState(null);
-  const [activeScenario, setActiveScenario] = useState("ATO_HEIST");
+  const [internalAlertDetail, setInternalAlertDetail] = useState(null);
+  const alertDetail = controlledAlertDetail || internalAlertDetail;
+
+  const [internalScenario, setInternalScenario] = useState("ATO_HEIST");
+  const activeScenario = controlledScenario || internalScenario;
+
   const [isReseeding, setIsReseeding] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showLiveMonitorModal, setShowLiveMonitorModal] = useState(false);
@@ -48,7 +68,7 @@ export default function Dashboard() {
       const res = await axios.get("/fraud/dashboard-summary");
       if (res.data && res.data.success) {
         setKpis(res.data.kpis);
-        setAlerts(res.data.alerts);
+        setInternalAlerts(res.data.alerts);
         if (res.data.alerts.length > 0 && !selectedAlertId) {
           const firstId = res.data.alerts[0].alertId;
           setSelectedAlertId(firstId);
@@ -64,7 +84,7 @@ export default function Dashboard() {
     try {
       const res = await axios.get(`/fraud/alerts/${alertId}`);
       if (res.data && res.data.success) {
-        setAlertDetail(res.data);
+        setInternalAlertDetail(res.data);
       }
     } catch (err) {
       console.error("Failed to load alert detail:", err);
@@ -76,14 +96,18 @@ export default function Dashboard() {
   }, []);
 
   const handleSelectScenario = (scenarioId) => {
-    setActiveScenario(scenarioId);
-    let targetAlertId = null;
+    setInternalScenario(scenarioId);
+    if (controlledSelectScenario) {
+      controlledSelectScenario(scenarioId);
+      return;
+    }
 
+    let targetAlertId = null;
     if (scenarioId === "ATO_HEIST") targetAlertId = "ALT-2026-001";
     else if (scenarioId === "MULE_RING") targetAlertId = "ALT-2026-002";
     else if (scenarioId === "CIRCULAR_LOOP") targetAlertId = "ALT-2026-003";
     else if (scenarioId === "NORMAL_USER") {
-      setAlertDetail({
+      setInternalAlertDetail({
         alert: {
           alertId: "NOMINAL-004",
           userId: "USR-1001",
@@ -176,6 +200,9 @@ export default function Dashboard() {
   };
 
   const handleExecuteAction = async (alertId, action, note) => {
+    if (controlledExecuteAction) {
+      return controlledExecuteAction(alertId, action, note);
+    }
     try {
       const res = await axios.post(`/fraud/alerts/${alertId}/action`, {
         action,
@@ -212,7 +239,11 @@ export default function Dashboard() {
   };
 
   const handleNavigate = (tabId) => {
-    setActiveTab(tabId);
+    if (onNavigateTab) {
+      onNavigateTab(tabId);
+      return;
+    }
+    setInternalActiveTab(tabId);
     if (tabId === "overview") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (tabId === "chains") {
@@ -223,27 +254,35 @@ export default function Dashboard() {
       setShowLiveMonitorModal(true);
     } else if (tabId === "investigate") {
       scrollTo("section-investigate");
+    } else if (tabId === "copilot" && onOpenCopilot) {
+      onOpenCopilot();
     }
   };
 
-  const activeAlert = alertDetail?.alert || alerts.find((a) => a.alertId === selectedAlertId) || alerts[0];
+  const activeAlert =
+    controlledActiveAlert ||
+    alertDetail?.alert ||
+    alerts.find((a) => a.alertId === selectedAlertId) ||
+    alerts[0];
 
   return (
     <div className="min-h-screen bg-[#060608] text-zinc-100 selection:bg-amber-400 selection:text-black">
-      {/* Top Navbar */}
-      <Navbar
-        activeTab={activeTab}
-        onNavigate={handleNavigate}
-        onReseed={handleReseed}
-        isReseeding={isReseeding}
-        onOpenDossier={() => scrollTo("section-investigate")}
-      />
+      {/* Top Navbar (only rendered if not controlled by parent App shell) */}
+      {!hideNavbar && (
+        <Navbar
+          activeTab={activeTab}
+          onNavigate={handleNavigate}
+          onReseed={handleReseed}
+          isReseeding={isReseeding}
+          onOpenDossier={() => (onOpenCopilot ? onOpenCopilot() : scrollTo("section-investigate"))}
+        />
+      )}
 
-      <main className="mx-auto max-w-7xl px-6 py-10 space-y-24">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 space-y-24">
         {/* ========================================================
             HERO SECTION (ABOVE THE FOLD)
             ======================================================== */}
-        <section className="space-y-10 pt-4 lg:pt-8">
+        <section className="space-y-10 pt-2 lg:pt-6">
           {/* Scenario Selector Bar */}
           <div className="flex justify-center">
             <ScenarioBar
@@ -264,119 +303,89 @@ export default function Dashboard() {
             {/* Kenesis-inspired hero action buttons */}
             <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
               <button
-                onClick={() => scrollTo("section-chains")}
-                className="group flex items-center gap-2 rounded-full bg-gradient-to-r from-[#fbb034] via-[#f59e0b] to-[#d97706] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.3)] hover:shadow-[0_0_32px_rgba(245,158,11,0.5)] hover:brightness-105 active:scale-95 transition-all"
+                onClick={() => (onOpenCopilot ? onOpenCopilot() : scrollTo("section-investigate"))}
+                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#fbb034] via-[#f59e0b] to-[#d97706] px-6 py-3 text-xs font-bold uppercase tracking-wider text-black shadow-[0_0_25px_rgba(245,158,11,0.25)] hover:shadow-[0_0_35px_rgba(245,158,11,0.4)] hover:brightness-105 active:scale-95 transition-all"
               >
-                <span>Live Attack Simulation</span>
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                <Bot className="h-4 w-4" />
+                <span>OPEN AI COPILOT DOSSIER</span>
+                <ArrowRight className="h-4 w-4" />
               </button>
+
               <button
                 onClick={() => setShowLiveMonitorModal(true)}
-                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-2.5 text-xs font-mono font-medium text-zinc-300 hover:bg-white/[0.08] hover:border-white/20 active:scale-95 transition-all"
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-6 py-3 text-xs font-mono font-medium text-zinc-300 hover:bg-white/[0.08] hover:text-white active:scale-95 transition-all backdrop-blur-sm"
               >
+                <span>LIVE ATTACK SIMULATOR</span>
                 <Activity className="h-3.5 w-3.5 text-amber-400" />
-                <span>Inject Event</span>
               </button>
             </div>
           </div>
 
-          {/* Core Metric Highlights (Compact, minimal, not 5 huge cards) */}
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 border-y border-white/[0.05] py-5">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Current Risk</span>
-              <span className="font-mono text-sm font-bold text-amber-400">
-                {activeAlert?.compositeRiskScore || 96}/100 · {activeAlert?.severity || "Critical"}
-              </span>
-            </div>
-
-            <div className="h-3 w-px bg-white/10 hidden sm:block" />
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Active Threats</span>
-              <span className="font-mono text-sm font-bold text-white">
-                {kpis.activeAtoIncidents} ATO Chains
-              </span>
-            </div>
-
-            <div className="h-3 w-px bg-white/10 hidden sm:block" />
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Protected Amount</span>
-              <span className="font-mono text-sm font-bold text-emerald-400">
-                ${kpis.preventedFraudVolume?.toLocaleString() || "53,500"}
-              </span>
-            </div>
-
-            <div className="h-3 w-px bg-white/10 hidden sm:block" />
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Mule Alerts</span>
-              <span className="font-mono text-sm font-bold text-amber-300">
-                {kpis.flaggedMuleAccounts} Flagged Hubs
-              </span>
-            </div>
-          </div>
-
-          {/* MAIN VISUAL CENTERPIECE: The Attack Chain */}
-          <HeroCenterpiece
-            alert={activeAlert}
-            scenario={activeScenario}
-            onExploreDossier={() => scrollTo("section-investigate")}
-          />
-
-          {/* Subtle Below-The-Fold Scroll Hint */}
-          <div className="flex justify-center pt-2">
-            <button
-              onClick={() => scrollTo("section-chains")}
-              className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-5 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:border-white/20 transition-all active:scale-95"
-            >
-              <span>Explore forensic breakdown &amp; network graph</span>
-              <ArrowDown className="h-3.5 w-3.5 text-amber-400 animate-bounce" />
-            </button>
+          {/* Core Visual: Animated 4-Stage Attack Progression */}
+          <div className="pt-4">
+            <HeroCenterpiece
+              alert={activeAlert}
+              scenario={activeScenario}
+              onExploreDossier={() => (onOpenCopilot ? onOpenCopilot() : scrollTo("section-investigate"))}
+            />
           </div>
         </section>
 
-        {/* ========================================================
-            BELOW THE FOLD: PROGRESSIVE FORENSIC REVELATION
-            ======================================================== */}
-
-        {/* Section 1: Detailed Attack-Chain Timeline */}
+        {/* Section 1: Detailed Sliding-Window Attack Chain Timeline */}
         <section id="section-chains" className="space-y-6 pt-12 border-t border-white/[0.05]">
-          <div className="space-y-1">
-            <span className="font-mono text-xs uppercase tracking-widest text-amber-400">
-              01 / Chronological Sequence
-            </span>
-            <h2 className="text-2xl font-bold tracking-tight text-white">
-              Detailed Attack-Chain Progression
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Examining event timestamps, device fingerprints, and incremental risk accumulation.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <span className="font-mono text-xs uppercase tracking-widest text-amber-400">
+                01 / Correlation Engine
+              </span>
+              <h2 className="text-2xl font-bold tracking-tight text-white">
+                Sliding 60-Minute Attack Chain
+              </h2>
+              <p className="text-sm text-zinc-400">
+                Temporal sequence analysis correlating low-risk authentication signals into high-confidence attack events.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-zinc-500">
+                Window: <span className="text-zinc-200">60 mins</span>
+              </span>
+              <span className="h-1 w-1 rounded-full bg-zinc-600" />
+              <span className="font-mono text-xs text-zinc-500">
+                Status: <span className="text-amber-400 font-semibold">{activeAlert?.attackChain?.sequenceDetected ? "CHAIN DETECTED" : "NORMAL"}</span>
+              </span>
+            </div>
           </div>
 
           <AttackChainTimeline
-            events={activeAlert?.attackChain?.events || []}
-            isFullSequence={activeAlert?.attackChain?.sequenceDetected}
-            onInvestigate={() => scrollTo("section-investigate")}
+            attackChain={activeAlert?.attackChain}
+            compositeRiskScore={activeAlert?.compositeRiskScore}
+            severity={activeAlert?.severity}
+            onOpenDrawer={() => setDrawerOpen(true)}
           />
         </section>
 
-        {/* Section 2: Destination-Account Network Graph */}
+        {/* Section 2: Destination Mule Network Graph */}
         <section id="section-graph" className="space-y-6 pt-12 border-t border-white/[0.05]">
-          <div className="space-y-1">
-            <span className="font-mono text-xs uppercase tracking-widest text-amber-400">
-              02 / Money-Flow Graph
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <span className="font-mono text-xs uppercase tracking-widest text-amber-400">
+                02 / Network Intelligence
+              </span>
+              <h2 className="text-2xl font-bold tracking-tight text-white">
+                Destination Mule Topology
+              </h2>
+              <p className="text-sm text-zinc-400">
+                Graph traversal uncovering Fan-In accumulation, fast dissipation, and circular flow rings.
+              </p>
+            </div>
+            <span className="font-mono text-xs text-zinc-400 bg-white/[0.03] border border-white/10 px-3 py-1 rounded-full self-start sm:self-auto">
+              Pattern: <span className="text-amber-400 font-bold">{activeAlert?.graphSignals?.pattern || "NONE"}</span>
             </span>
-            <h2 className="text-2xl font-bold tracking-tight text-white">
-              Destination Account Topology
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Detecting mule aggregation (Fan-In), disbursement (Fan-Out), rapid pass-through sweeps, and cyclic smurfing loops.
-            </p>
           </div>
 
           <DestinationGraph
             graphSignals={activeAlert?.graphSignals}
+            graphData={alertDetail?.graphData}
             destAccountName={activeAlert?.destAccountName}
             destAccountNumber={activeAlert?.destAccount}
           />
