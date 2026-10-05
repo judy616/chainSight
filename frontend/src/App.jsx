@@ -7,39 +7,61 @@ function App() {
   const [page, setPage] = useState("dashboard");
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-[#060608] text-zinc-100">
+      {/* Top Application Navigation Switcher */}
+      <div className="sticky top-0 z-[60] flex items-center justify-between border-b border-white/[0.06] bg-[#09090d]/90 px-6 py-2 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <span className="font-brand text-xs font-bold uppercase tracking-[0.24em] text-white">
+            CHAINSIGHT
+          </span>
+          <span className="h-1 w-1 rounded-full bg-zinc-600 hidden sm:block" />
+          <span className="hidden sm:inline-block font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
+            Intelligence Suite
+          </span>
+        </div>
 
-      {/* Navigation */}
-      <div className="flex gap-3 p-4 bg-gray-950 border-b border-gray-800">
+        <div className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] p-1">
+          <button
+            onClick={() => setPage("dashboard")}
+            className={`rounded-full px-3.5 py-1 text-xs font-mono font-medium transition-all ${
+              page === "dashboard"
+                ? "bg-zinc-800 text-white border border-amber-500/40 shadow-sm"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Dashboard
+          </button>
 
-        <button
-          onClick={() => setPage("dashboard")}
-          className="px-4 py-2 rounded-lg bg-gray-800 text-gray-200 hover:bg-gray-700"
-        >
-          Dashboard
-        </button>
+          <button
+            onClick={() => setPage("rules")}
+            className={`rounded-full px-3.5 py-1 text-xs font-mono font-medium transition-all ${
+              page === "rules"
+                ? "bg-zinc-800 text-white border border-amber-500/40 shadow-sm"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Rule Builder
+          </button>
 
-        <button
-          onClick={() => setPage("rules")}
-          className="px-4 py-2 rounded-lg bg-cyan-700 text-white hover:bg-cyan-600"
-        >
-          Rule Builder
-        </button>
-
-        <button
-          onClick={() => setPage("copilot")}
-          className="px-4 py-2 rounded-lg bg-purple-700 text-white hover:bg-purple-600"
-        >
-          AI Case Copilot
-        </button>
-
+          <button
+            onClick={() => setPage("copilot")}
+            className={`rounded-full px-3.5 py-1 text-xs font-mono font-medium transition-all ${
+              page === "copilot"
+                ? "bg-zinc-800 text-white border border-amber-500/40 shadow-sm"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            AI Case Copilot
+          </button>
+        </div>
       </div>
 
       {/* Pages */}
-      {page === "dashboard" && <Dashboard />}
-      {page === "rules" && <RuleBuilder />}
-      {page === "copilot" && <CaseCopilot />}
-
+      <div className="w-full">
+        {page === "dashboard" && <Dashboard />}
+        {page === "rules" && <RuleBuilder />}
+        {page === "copilot" && <CaseCopilot />}
+      </div>
     </div>
   );
 }
